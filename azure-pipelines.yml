@@ -6,8 +6,6 @@ variables:
 
 trigger:
 - master
-# TODO: 20190528 - should we be testing end_to_end on chef-15?
-#- chef-15
 
 pool:
   vmImage: $(imageName)
@@ -30,6 +28,7 @@ jobs:
 
     - script: |
         OHAI_VERSION=$(sed -n '/ohai .[0-9]/{s/.*(//;s/)//;p;}' Gemfile.lock)
+        sudo xcode-select --install || true
         sudo /opt/chef/embedded/bin/gem install appbundler appbundle-updater --no-doc
         sudo /opt/chef/embedded/bin/appbundle-updater chef ohai v${OHAI_VERSION} --tarball --github chef/ohai
         sudo /opt/chef/embedded/bin/appbundle-updater chef chef $BUILD_SOURCEVERSION --tarball --github chef/chef
@@ -41,10 +40,11 @@ jobs:
     - script: |
         cd kitchen-tests
         sudo /opt/chef/embedded/bin/bundle config set without 'omnibus_package ruby_prof'
-        sudo /opt/chef/embedded/bin/bundle install --jobs=3 --retry=3 --path=vendor/bundle
-        sudo /opt/chef/embedded/bin/gem install berkshelf --no-doc
-        sudo /opt/chef/embedded/bin/berks vendor cookbooks
-        sudo /opt/chef/bin/chef-client -z -o end_to_end --chef-license accept-no-persist
+        sudo /opt/chef/embedded/bin/gem install chef-cli --no-doc
+        sudo /opt/chef/embedded/bin/chef-cli install
+        sudo /opt/chef/embedded/bin/chef-cli export test --force
+        cd test
+        sudo /opt/chef/bin/chef-client -z --named-run-list end_to_end --chef-license accept-no-persist
       displayName: 'Run end_to_end::default recipe'
 
   - job:
@@ -78,14 +78,9 @@ jobs:
         cd kitchen-tests
         $env:PATH = "C:\opscode\chef\bin;C:\opscode\chef\embedded\bin;" + $env:PATH
         bundle config set without 'omnibus_package ruby_prof'
-        bundle install --jobs=3 --retry=3 --path=vendor/bundle
-        gem install berkshelf --no-doc
-        # berks emits a ruby warning when it loads net/http due to a previously
-        # defined constant. Even though it is just a warning, powershell immediately
-        # exits 1. I'm not sure why but this just suppresses the warnings.
-        $env:RUBYOPT="-W0"
-        berks vendor cookbooks
-        # restore the default warning level
-        $env:RUBYOPT="-W1"
-        chef-client -z -o end_to_end --chef-license accept-no-persist
+        gem install chef-cli --no-doc
+        chef-cli install
+        chef-cli export test --force
+        cd test
+        chef-client -z --named-run-list end_to_end --chef-license accept-no-persist
       displayName: 'Run end_to_end::default recipe'
