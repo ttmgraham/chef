@@ -36,14 +36,8 @@ class Chef
           # @return Array<Version>
           # NB: "options" here is the dnf_package options hash and
           # is deliberately not **opts
-          def package_query(action,
-                            provides,
-                            version: nil,
-                            arch: nil,
-                            options: [])
-            parameters = { 'provides' => provides,
-                           'version' => version,
-                           'arch' => arch }
+          def package_query(action, provides, version: nil, arch: nil, options: [])
+            parameters = { 'provides' => provides, 'version' => version, 'arch' => arch }
             if options
               parameters['options'] = options.join(' ')
             end
@@ -66,8 +60,7 @@ class Chef
               unless cmd
                 # Overriding linter to force raise instead of fail
                 # rubocop:disable Style/SignalException
-                raise Chef::Exceptions::Package,
-                      'unable to find microdnf command'
+                raise Chef::Exceptions::Package, 'unable to find microdnf command'
                 # rubocop:enable Style/SignalException
               end
             end
@@ -233,4 +226,3 @@ class Chef
     end
   end
 end
-

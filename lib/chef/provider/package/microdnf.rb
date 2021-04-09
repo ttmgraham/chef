@@ -63,11 +63,8 @@ class Chef
               !new_resource.source ||
                           ::File.exist?(new_resource.source)
             end
-            a.failure_message Chef::Exceptions::Package,
-                              "Package #{new_resource.package_name} not "\
-                              "found: #{new_resource.source}"
-            a.whyrun "assuming #{new_resource.source} would have previously "\
-                     'been created'
+            a.failure_message Chef::Exceptions::Package, "Package #{new_resource.package_name} not found: #{new_resource.source}"
+            a.whyrun "assuming #{new_resource.source} would have previously been created"
           end
 
           super
@@ -93,12 +90,7 @@ class Chef
 
         def install_package(names, _versions)
           if new_resource.source
-            microdnf_helper.microdnf(
-              options,
-              '-y',
-              'install',
-              new_resource.source,
-            )
+            microdnf_helper.microdnf(options, '-y', 'install', new_resource.source)
           else
             resolved_names = names.each_with_index.map do |name, i|
               available_version(i).to_s unless name.nil?
@@ -141,20 +133,14 @@ class Chef
         end
 
         def resolve_source_to_version_obj
-          shell_out!('rpm -qp --queryformat ' +
-                     "'%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{ARCH}\n'" +
-                     " #{new_resource.source}").stdout.each_line do |line|
+          shell_out!("rpm -qp --queryformat '%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{ARCH}\n' #{new_resource.source}").stdout.each_line do |line|
             # this is another case of committing the sin of doing some
             # lightweight mangling of RPM versions in ruby -- but the
             # output of the rpm command does not match what the yum
             # library accepts.
             case line
             when /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/
-              return Version.new(
-                $1,
-                "#{$2 == '(none)' ? '0' : $2}:#{$3}-#{$4}",
-                $5,
-              )
+              return Version.new($1, "#{$2 == '(none)' ? '0' : $2}:#{$3}-#{$4}", $5)
             end
           end
         end
@@ -167,13 +153,7 @@ class Chef
             if new_resource.source
               resolve_source_to_version_obj
             else
-              microdnf_helper.package_query(
-                :whatavailable,
-                package_name_array[index],
-                :version => safe_version_array[index],
-                :arch => safe_arch_array[index],
-                :options => options,
-              )
+              microdnf_helper.package_query(:whatavailable, package_name_array[index], :version => safe_version_array[index], :arch => safe_arch_array[index], :options => options)
             end
 
           @available_version[index]
@@ -184,21 +164,9 @@ class Chef
           @magical_version ||= []
           @magical_version[index] ||=
             if new_resource.source
-              microdnf_helper.package_query(
-                :whatinstalled,
-                available_version(index).name,
-                :version => safe_version_array[index],
-                :arch => safe_arch_array[index],
-                :options => options,
-              )
+              microdnf_helper.package_query(:whatinstalled, available_version(index).name, :version => safe_version_array[index], :arch => safe_arch_array[index], :options => options)
             else
-              microdnf_helper.package_query(
-                :whatinstalled,
-                package_name_array[index],
-                :version => safe_version_array[index],
-                :arch => safe_arch_array[index],
-                :options => options,
-              )
+              microdnf_helper.package_query(:whatinstalled, package_name_array[index], :version => safe_version_array[index], :arch => safe_arch_array[index], :options => options)
             end
           @magical_version[index]
         end
@@ -207,19 +175,9 @@ class Chef
           @current_version ||= []
           @current_version[index] ||=
             if new_resource.source
-              microdnf_helper.package_query(
-                :whatinstalled,
-                available_version(index).name,
-                :arch => safe_arch_array[index],
-                :options => options,
-              )
+              microdnf_helper.package_query(:whatinstalled, available_version(index).name, :arch => safe_arch_array[index], :options => options)
             else
-              microdnf_helper.package_query(
-                :whatinstalled,
-                package_name_array[index],
-                :arch =>  safe_arch_array[index],
-                :options => options,
-              )
+              microdnf_helper.package_query(:whatinstalled, package_name_array[index], :arch =>  safe_arch_array[index], :options => options)
             end
           @current_version[index]
         end
@@ -247,4 +205,3 @@ class Chef
     end
   end
 end
-
