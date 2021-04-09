@@ -43,7 +43,7 @@ class Chef
             end
             query_output = query(action, parameters)
             version = parse_response(query_output)
-            Chef::Log.debug "parsed #{version} from microDNF helper"
+            Chef::Log.trace "parsed #{version} from microDNF helper"
             version
           end
 
@@ -65,7 +65,7 @@ class Chef
               end
             end
 
-            Chef::Log.debug("Setting microdnf command to: #{cmd}")
+            Chef::Log.trace("Setting microdnf command to: #{cmd}")
             cmd
           end
 
@@ -86,9 +86,9 @@ class Chef
 
           def query(action, parameters)
             request = build_query(action, parameters)
-            Chef::Log.debug "sending '#{request}' to microDNF helper"
+            Chef::Log.trace "sending '#{request}' to microDNF helper"
             result = microdnf_query(request)
-            Chef::Log.debug "got '#{result}' from microDNF helper"
+            Chef::Log.trace "got '#{result}' from microDNF helper"
             result
           end
 
